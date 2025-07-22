@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rate Cyan Support Bot</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: rgb(235,246,255);
+      padding: 30px;
+    }
+    h2 {
+      margin-bottom: 10px;
+      color: #333;
+    }
+    .stars {
+      display: inline-block;
+      margin: 20px 0;
+    }
+    .star {
+      font-size: 40px;
+      color: #ccc;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .star.selected,
+    .star:hover,
+    .star.hovered {
+      color: gold;
+    }
+    textarea, input {
+      width: 90%;
+      max-width: 400px;
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    button {
+      margin-top: 20px;
+      padding: 12px 30px;
+      font-size: 16px;
+      background-color: #007bff;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .thank-you {
+      display: none;
+      color: green;
+      font-weight: bold;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Rate Cyan Support Bot</h2>
+
+  <div class="stars" id="starContainer">
+    <span class="star" data-value="1">&#9733;</span>
+    <span class="star" data-value="2">&#9733;</span>
+    <span class="star" data-value="3">&#9733;</span>
+    <span class="star" data-value="4">&#9733;</span>
+    <span class="star" data-value="5">&#9733;</span>
+  </div>
+
+  <textarea id="feedback" rows="4" placeholder="Any feedback? "></textarea>
+  <input type="text" id="name" placeholder="Your name " />
+  <button onclick="submitRating()">Submit</button>
+
+  <div class="thank-you" id="thankYou">Thank you for your feedback!</div>
+  <br>
+  <br>
+<div style="width: 150px; height: 150px; overflow: hidden; border-radius: 15px; margin: 0 auto;">
+<div style="width: 150px; height: 150px; overflow: hidden; border-radius: 15px;">
+  <img src="Cyan.png" alt="Icon" 
+       style="width: 100%; height: 100%; object-fit: cover; object-position: 39% center;">
+  </div>
+</div>
+  <div id="averageRating" style="font-size: 18px; color: #007bff; margin-top: 20px;"></div>
+  
+  <script>
+  // Load and show average rating
+  const BIN_ID = "685cbac98a456b7966b5cfaf";
+  const API_KEY = "$2a$10$x7VBgNRztww.OlDubg9dS.Q86N6zGeCi/6oSlWc3NE7wYYAW3deia";
+
+  fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+    headers: {
+      "X-Master-Key": API_KEY
+    }
+  })
+  .then(res => res.json())
+  .then(data => {
+    const ratings = data.record.map(entry => entry.rating);
+    const avg = ratings.reduce((a, b) => a + b, 0) / ratings.length;
+    document.getElementById("averageRating").textContent = `⭐ Average Rating: ${avg.toFixed(1)} / 5`;
+  })
+  .catch(err => {
+    console.error("Error fetching average rating:", err);
+  });
+  </script>
+  
+
+  <script>
+    const stars = document.querySelectorAll('.star');
+    let selectedRating = 0;
+
+    stars.forEach(star => {
+      star.addEventListener('mouseover', () => {
+        const val = parseInt(star.getAttribute('data-value'));
+        highlightStars(val);
+      });
+
+      star.addEventListener('mouseout', () => {
+        highlightStars(selectedRating);
+      });
+
+      star.addEventListener('click', () => {
+        selectedRating = parseInt(star.getAttribute('data-value'));
+        highlightStars(selectedRating);
+      });
+    });
+
+    function highlightStars(rating) {
+      stars.forEach(star => {
+        const val = parseInt(star.getAttribute('data-value'));
+        star.classList.toggle('selected', val <= rating);
+      });
+    }
+
+    function submitRating() {
+      const feedback = document.getElementById('feedback').value.trim();
+      const name = document.getElementById('name').value.trim();
+
+      if (selectedRating === 0) {
+        alert("Please select a star rating!");
+        return;
+      }
+
+      const newRating = {
+        rating: selectedRating,
+        name: name || "Anonymous",
+        feedback: feedback || "",
+        time: new Date().toLocaleString()
+      };
+
+      // 🔗 Replace YOUR_BIN_ID and YOUR_API_KEY below
+      const BIN_ID = "685cbac98a456b7966b5cfaf";
+      const API_KEY = "$2a$10$x7VBgNRztww.OlDubg9dS.Q86N6zGeCi/6oSlWc3NE7wYYAW3deia";
+
+      fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+        headers: {
+          "X-Master-Key": API_KEY
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        const updated = [...data.record, newRating];
+        return fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Master-Key": API_KEY
+          },
+          body: JSON.stringify(updated)
+        });
+      })
+      .then(() => {
+        document.getElementById('thankYou').style.display = 'block';
+        setTimeout(() => {
+          document.getElementById('thankYou').style.display = 'none';
+        }, 5000);
+        // Reset form
+        selectedRating = 0;
+        highlightStars(0);
+        document.getElementById('feedback').value = "";
+        document.getElementById('name').value = "";
+      })
+      .catch(err => {
+        console.error("Error saving rating:", err);
+        alert("Something went wrong. Please try again later.");
+      });
+    }
+  </script>
+
+</body>
+</html>
